@@ -1,0 +1,269 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local gui = Instance.new("ScreenGui")
+gui.Name = "AydinsHubPro"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+------------------------------------------------
+-- SETTINGS
+------------------------------------------------
+local Settings = {
+	AimAssist = true,
+	Highlight = false,
+	Name = true,
+	Health = true,
+	AimStrength = 0.05
+}
+
+------------------------------------------------
+-- OPEN BUTTON
+------------------------------------------------
+local openBtn = Instance.new("TextButton")
+openBtn.Size = UDim2.new(0, 95, 0, 34)
+openBtn.Position = UDim2.new(0, 10, 0.25, 0)
+openBtn.Text = "MENU"
+openBtn.BackgroundColor3 = Color3.fromRGB(20,20,20)
+openBtn.TextColor3 = Color3.new(1,1,1)
+openBtn.Visible = false
+openBtn.Parent = gui
+Instance.new("UICorner", openBtn).CornerRadius = UDim.new(0,6)
+
+------------------------------------------------
+-- MAIN FRAME
+------------------------------------------------
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 260, 0, 380)
+frame.Position = UDim2.new(0, 10, 0.25, 0)
+frame.BackgroundColor3 = Color3.fromRGB(15,15,15)
+frame.BorderSizePixel = 0
+frame.Parent = gui
+frame.AnchorPoint = Vector2.new(0,0)
+
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,10)
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(180,0,0)
+stroke.Thickness = 2
+stroke.Parent = frame
+
+------------------------------------------------
+-- TOP BAR
+------------------------------------------------
+local top = Instance.new("Frame")
+top.Size = UDim2.new(1,0,0,36)
+top.BackgroundColor3 = Color3.fromRGB(25,25,25)
+top.BorderSizePixel = 0
+top.Parent = frame
+
+Instance.new("UICorner", top).CornerRadius = UDim.new(0,10)
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,0,1,0)
+title.BackgroundTransparency = 1
+title.Text = "Aydins Hub Pro"
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.Parent = top
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0,28,0,28)
+closeBtn.Position = UDim2.new(1,-32,0,4)
+closeBtn.Text = "X"
+closeBtn.BackgroundColor3 = Color3.fromRGB(120,0,0)
+closeBtn.TextColor3 = Color3.new(1,1,1)
+closeBtn.Parent = top
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0,6)
+
+------------------------------------------------
+-- DRAG SYSTEM (MOBILE + PC)
+------------------------------------------------
+local dragging, dragStart, startPos
+
+top.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+	or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+		or input.UserInputType == Enum.UserInputType.Touch) then
+
+		local delta = input.Position - dragStart
+		frame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+UserInputService.InputEnded:Connect(function()
+	dragging = false
+end)
+
+------------------------------------------------
+-- TABS
+------------------------------------------------
+local tabHolder = Instance.new("Frame")
+tabHolder.Size = UDim2.new(1,0,0,30)
+tabHolder.Position = UDim2.new(0,0,0,36)
+tabHolder.BackgroundTransparency = 1
+tabHolder.Parent = frame
+
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1,-20,1,-80)
+content.Position = UDim2.new(0,10,0,70)
+content.BackgroundTransparency = 1
+content.Parent = frame
+
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0,6)
+layout.Parent = content
+
+local function clear()
+	for _,v in pairs(content:GetChildren()) do
+		if v:IsA("GuiObject") then v:Destroy() end
+	end
+end
+
+------------------------------------------------
+-- TOGGLE SYSTEM
+------------------------------------------------
+local function toggle(text, key)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(1,0,0,28)
+	btn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+	btn.TextColor3 = Color3.new(1,1,1)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 14
+	btn.Parent = content
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+
+	local function update()
+		btn.Text = text..": "..(Settings[key] and "ON" or "OFF")
+	end
+
+	update()
+
+	btn.MouseButton1Click:Connect(function()
+		Settings[key] = not Settings[key]
+		update()
+	end)
+end
+
+------------------------------------------------
+-- SLIDER
+------------------------------------------------
+local function slider(name, min, max, key)
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1,0,0,20)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = Color3.new(1,1,1)
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 14
+	label.Parent = content
+
+	local bar = Instance.new("Frame")
+	bar.Size = UDim2.new(1,0,0,6)
+	bar.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	bar.Parent = content
+	Instance.new("UICorner", bar).CornerRadius = UDim.new(1,0)
+
+	local knob = Instance.new("Frame")
+	knob.Size = UDim2.new(0,10,0,10)
+	knob.BackgroundColor3 = Color3.fromRGB(180,0,0)
+	knob.Parent = bar
+	Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
+
+	local draggingSlider = false
+
+	local function updateText()
+		label.Text = name..": "..string.format("%.2f",Settings[key])
+	end
+
+	updateText()
+
+	bar.InputBegan:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.MouseButton1 then
+			draggingSlider = true
+		end
+	end)
+
+	UserInputService.InputEnded:Connect(function()
+		draggingSlider = false
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if draggingSlider then
+			local x = math.clamp((input.Position.X - bar.AbsolutePosition.X)/bar.AbsoluteSize.X,0,1)
+			knob.Position = UDim2.new(x,0,0,0)
+			Settings[key] = min + (max-min)*x
+			updateText()
+		end
+	end)
+end
+
+------------------------------------------------
+-- TABS BUTTONS
+------------------------------------------------
+local function tabButton(name, func)
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.new(0.33,0,1,0)
+	b.Text = name
+	b.BackgroundColor3 = Color3.fromRGB(25,25,25)
+	b.TextColor3 = Color3.new(1,1,1)
+	b.Parent = tabHolder
+	Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
+
+	b.MouseButton1Click:Connect(func)
+end
+
+------------------------------------------------
+-- TAB CONTENT
+------------------------------------------------
+tabButton("Combat", function()
+	clear()
+	toggle("Aim Assist","AimAssist")
+	slider("Aim Strength",0.01,0.2,"AimStrength")
+end)
+
+tabButton("Visual", function()
+	clear()
+	toggle("Highlight","Highlight")
+	toggle("Name","Name")
+	toggle("Health","Health")
+end)
+
+tabButton("Settings", function()
+	clear()
+	toggle("Team Check","TeamCheck")
+end)
+
+------------------------------------------------
+-- OPEN / CLOSE
+------------------------------------------------
+closeBtn.MouseButton1Click:Connect(function()
+	frame.Visible = false
+	openBtn.Visible = true
+end)
+
+openBtn.MouseButton1Click:Connect(function()
+	frame.Visible = true
+	openBtn.Visible = false
+end)
+
+-- default tab
+clear()
+toggle("Aim Assist","AimAssist")
+slider("Aim Strength",0.01,0.2,"AimStrength")
