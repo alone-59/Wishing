@@ -267,3 +267,64 @@ end)
 clear()
 toggle("Aim Assist","AimAssist")
 slider("Aim Strength",0.01,0.2,"AimStrength")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+------------------------------------------------
+-- HIGHLIGHT SYSTEM (TOGGLE SAFE)
+------------------------------------------------
+local function addHighlight(character, enabled)
+	if not character then return end
+
+	local existing = character:FindFirstChild("PlayerHighlight")
+
+	if enabled then
+		if not existing then
+			local highlight = Instance.new("Highlight")
+			highlight.Name = "PlayerHighlight"
+			highlight.FillColor = Color3.fromRGB(255, 0, 0)
+			highlight.FillTransparency = 0.5
+			highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+			highlight.OutlineTransparency = 0
+			highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+			highlight.Parent = character
+		end
+	else
+		if existing then
+			existing:Destroy()
+		end
+	end
+end
+
+------------------------------------------------
+-- APPLY TO PLAYERS
+------------------------------------------------
+local function setupPlayer(plr)
+	if plr == Players.LocalPlayer then return end
+
+	if plr.Character then
+		addHighlight(plr.Character, Settings.Highlight)
+	end
+
+	plr.CharacterAdded:Connect(function(char)
+		task.wait(0.2)
+		addHighlight(char, Settings.Highlight)
+	end)
+end
+
+for _, p in ipairs(Players:GetPlayers()) do
+	setupPlayer(p)
+end
+
+Players.PlayerAdded:Connect(setupPlayer)
+
+------------------------------------------------
+-- LIVE UPDATE LOOP (SYNC WITH MENU TOGGLE)
+------------------------------------------------
+RunService.RenderStepped:Connect(function()
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p ~= Players.LocalPlayer and p.Character then
+			addHighlight(p.Character, Settings.Highlight)
+		end
+	end
+end)
